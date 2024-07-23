@@ -2,9 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Data Visualization</title>
+    <style>
+        .today-weather {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
+    <h1>Daily Weather Charts</h1>
+    <h2>Daily High and Low Temperatures</h2>
+    <img src="{{ url_for('static', filename='daily_temperature_chart.png') }}" alt="Daily Temperature Chart">
+    <h2>Daily Humidity</h2>
+    <img src="{{ url_for('static', filename='daily_humidity_chart.png') }}" alt="Daily Humidity Chart">
 
+    <h1>Hourly Weather Charts</h1>
+    <h2>Hourly Temperatures</h2>
+    <img src="{{ url_for('static', filename='hourly_temperature_chart.png') }}" alt="Hourly Temperature Chart">
+    <h2>Hourly Humidity</h2>
+    <img src="{{ url_for('static', filename='hourly_humidity_chart.png') }}" alt="Hourly Humidity Chart">
+
+    <h1>Today's Weather</h1>
+    <div class="today-weather">
+        <p>City: {{ today_weather['city'] }}</p>
+        <p>Temperature: {{ today_weather['temperature'] }}°C</p>
+        <p>Real Feel: {{ today_weather['realfeel'] }}°C</p>
+        <p>Wind: {{ today_weather['wind'] }} km/h</p>
+        <p>Gust: {{ today_weather['gust'] }} km/h</p>
+        <p>Air Quality: {{ today_weather['air_quality'] }}</p>
+    </div>
 </body>
 </html>
