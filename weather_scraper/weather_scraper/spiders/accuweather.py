@@ -1,17 +1,27 @@
 import os
 import re
 import sqlite3
-from html import unescape
 import scrapy
-
+import csv
+from html import unescape
+from scrapy.http import Request
 
 class AccuweatherSpider(scrapy.Spider):
     name = 'accuweather'
     allowed_domains = ['accuweather.com']
-    start_urls = ['https://www.accuweather.com/zh/jp/tokyo/226396/weather-forecast/226396']
+
+    def start_requests(self):
+        # 动态获取项目根目录
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        csv_path = os.path.join(project_root, 'city.csv')
+
+        with open(csv_path, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                yield scrapy.Request(url=row['city_url'], callback=self.parse, meta={'city': row['city_name']})
 
     def parse(self, response):
-        city = 'Tokyo'  # 你可以根据实际情况动态获取城市名
+        city = response.meta['city']
 
         # 提取温度信息
         temperature = response.css('div.temp::text').re_first(r'\d+')
@@ -91,18 +101,23 @@ class AccuweatherSpider(scrapy.Spider):
         db_path = os.path.join(base_dir, 'weather_data.db')
         return sqlite3.connect(db_path)
 
+
     def save_city(self, city):
         conn = self.get_db_connection()
         cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS city (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE
+            )
+        ''')
         cursor.execute('''
             INSERT OR IGNORE INTO city (name) VALUES (?)
         ''', (city,))
         conn.commit()
         conn.close()
 
-
     def save_today_weather(self, city, temperature, realfeel, wind, gust, air_quality):
-        self.save_city(city)
         conn = self.get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
@@ -113,7 +128,8 @@ class AccuweatherSpider(scrapy.Spider):
                 realfeel TEXT,
                 wind TEXT,
                 gust TEXT,
-                air_quality TEXT
+                air_quality TEXT,
+                FOREIGN KEY (city) REFERENCES city(name)
             )
         ''')
         cursor.execute('''
@@ -124,7 +140,6 @@ class AccuweatherSpider(scrapy.Spider):
         conn.close()
 
     def save_hourly_forecast(self, city, time, temp, humidity):
-        self.save_city(city)
         conn = self.get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
@@ -133,7 +148,8 @@ class AccuweatherSpider(scrapy.Spider):
                 city TEXT,
                 time TEXT,
                 temperature TEXT,
-                humidity TEXT
+                humidity TEXT,
+                FOREIGN KEY (city) REFERENCES city(name)
             )
         ''')
         cursor.execute('''
@@ -144,7 +160,6 @@ class AccuweatherSpider(scrapy.Spider):
         conn.close()
 
     def save_daily_forecast(self, city, date, high_temp, low_temp, detail_weather, humidity):
-        self.save_city(city)
         conn = self.get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
@@ -155,7 +170,8 @@ class AccuweatherSpider(scrapy.Spider):
                 high_temp TEXT,
                 low_temp TEXT,
                 detail_weather TEXT,
-                humidity TEXT
+                humidity TEXT,
+                FOREIGN KEY (city) REFERENCES city(name)
             )
         ''')
         cursor.execute('''

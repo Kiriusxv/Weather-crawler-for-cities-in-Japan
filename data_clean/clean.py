@@ -2,8 +2,6 @@ import os
 import re
 import pandas as pd
 import sqlite3
-from scipy.stats import zscore
-from sklearn.preprocessing import MinMaxScaler
 
 # 获取当前脚本的目录
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,59 +24,88 @@ daily_forecast_df = pd.read_sql("SELECT * FROM daily_forecast", conn)
 hourly_forecast_df = pd.read_sql("SELECT * FROM hourly_forecast", conn)
 today_weather_df = pd.read_sql("SELECT * FROM today_weather", conn)
 
+# 获取所有城市名称
+cities = pd.read_sql("SELECT DISTINCT name FROM city", conn)['name'].tolist()
+
 # 关闭连接
 conn.close()
 
-# 将数据保存为CSV文件
-daily_forecast_df.to_csv('daily_forecast.csv', index=False)
-hourly_forecast_df.to_csv('hourly_forecast.csv', index=False)
-today_weather_df.to_csv('today_weather.csv', index=False)
 
-# 数据清理函数
-def clean_temperature(temp_str):
+# 数据清理和转换函数
+def clean_and_convert_temperature(temp_str):
     if isinstance(temp_str, str):
         temp_str = re.sub(r'[^\d.]+', '', temp_str)  # 移除非数字字符
     try:
-        return float(temp_str)
+        temp_fahrenheit = float(temp_str)
+        temp_celsius = (temp_fahrenheit - 32) * 5.0 / 9.0  # 转换为摄氏度
+        return round(temp_celsius, 2)  # 保留两位小数
     except ValueError:
         return None
 
-# 对daily_forecast表进行数据清洗
-daily_forecast_df = pd.read_csv('daily_forecast.csv')
-daily_forecast_df.dropna(inplace=True)
-daily_forecast_df.drop_duplicates(inplace=True)
-daily_forecast_df['high_temp'] = daily_forecast_df['high_temp'].apply(clean_temperature).astype(float)
-daily_forecast_df['low_temp'] = daily_forecast_df['low_temp'].apply(clean_temperature).astype(float)
-threshold_high = daily_forecast_df['high_temp'].mean() + 3 * daily_forecast_df['high_temp'].std()
-threshold_low = daily_forecast_df['low_temp'].mean() + 3 * daily_forecast_df['low_temp'].std()
-daily_forecast_df.loc[daily_forecast_df['high_temp'] > threshold_high, 'high_temp'] = daily_forecast_df['high_temp'].mean()
-daily_forecast_df.loc[daily_forecast_df['low_temp'] > threshold_low, 'low_temp'] = daily_forecast_df['low_temp'].mean()
-daily_forecast_df.to_csv('cleaned_daily_forecast.csv', index=False)
 
-# 对hourly_forecast表进行数据清洗
-hourly_forecast_df = pd.read_csv('hourly_forecast.csv')
-hourly_forecast_df.dropna(inplace=True)
-hourly_forecast_df.drop_duplicates(inplace=True)
-hourly_forecast_df['temperature'] = hourly_forecast_df['temperature'].apply(clean_temperature)
+def clean_and_convert_humidity(humidity_str):
+    if isinstance(humidity_str, str):
+        humidity_str = re.sub(r'[^\d.]+', '', humidity_str)  # 移除非数字字符
+    try:
+        return round(float(humidity_str), 2)  # 保留两位小数
+    except ValueError:
+        return None
 
-# 打印清理后无法转换的值
-print(hourly_forecast_df[hourly_forecast_df['temperature'].isnull()])
 
-# 转换为浮点数
-hourly_forecast_df['temperature'] = hourly_forecast_df['temperature'].astype(float)
+# 去除以 "N/A" 结尾的字符串中的 "N/A"
+def remove_na_suffix(detail_str):
+    if isinstance(detail_str, str) and detail_str.endswith("，N/A"):
+        return detail_str[:-4]
+    return detail_str
 
-threshold_temp = hourly_forecast_df['temperature'].mean() + 3 * hourly_forecast_df['temperature'].std()
-hourly_forecast_df.loc[hourly_forecast_df['temperature'] > threshold_temp, 'temperature'] = hourly_forecast_df['temperature'].mean()
-hourly_forecast_df.to_csv('cleaned_hourly_forecast.csv', index=False)
 
-# 对today_weather表进行数据清洗
-today_weather_df = pd.read_csv('today_weather.csv')
-today_weather_df.dropna(inplace=True)
-today_weather_df.drop_duplicates(inplace=True)
-today_weather_df['temperature'] = today_weather_df['temperature'].apply(clean_temperature).astype(float)
-today_weather_df['realfeel'] = today_weather_df['realfeel'].apply(clean_temperature).astype(float)
-today_weather_df['wind'] = today_weather_df['wind'].apply(clean_temperature).astype(float)
-today_weather_df['gust'] = today_weather_df['gust'].apply(clean_temperature).astype(float)
-threshold_temp = today_weather_df['temperature'].mean() + 3 * today_weather_df['temperature'].std()
-today_weather_df.loc[today_weather_df['temperature'] > threshold_temp, 'temperature'] = today_weather_df['temperature'].mean()
-today_weather_df.to_csv('cleaned_today_weather.csv', index=False)
+# 创建文件夹并保存数据
+for city in cities:
+    city_folder = os.path.join(base_dir, city)
+    os.makedirs(city_folder, exist_ok=True)
+
+    # 过滤出该城市的数据
+    city_daily_forecast = daily_forecast_df[daily_forecast_df['city'] == city].copy()
+    city_hourly_forecast = hourly_forecast_df[hourly_forecast_df['city'] == city].copy()
+    city_today_weather = today_weather_df[today_weather_df['city'] == city].copy()
+
+    # 清理和转换数据
+    if 'high_temp' in city_daily_forecast.columns:
+        city_daily_forecast.loc[:, 'high_temp'] = city_daily_forecast['high_temp'].apply(clean_and_convert_temperature)
+    if 'low_temp' in city_daily_forecast.columns:
+        city_daily_forecast.loc[:, 'low_temp'] = city_daily_forecast['low_temp'].apply(clean_and_convert_temperature)
+    if 'humidity' in city_daily_forecast.columns:
+        city_daily_forecast.loc[:, 'humidity'] = city_daily_forecast['humidity'].apply(clean_and_convert_humidity)
+    if 'detail_weather' in city_daily_forecast.columns:
+        city_daily_forecast.loc[:, 'detail_weather'] = city_daily_forecast['detail_weather'].apply(remove_na_suffix)
+
+    if 'temperature' in city_hourly_forecast.columns:
+        city_hourly_forecast.loc[:, 'temperature'] = city_hourly_forecast['temperature'].apply(
+            clean_and_convert_temperature)
+    if 'humidity' in city_hourly_forecast.columns:
+        city_hourly_forecast.loc[:, 'humidity'] = city_hourly_forecast['humidity'].apply(clean_and_convert_humidity)
+
+    if 'temperature' in city_today_weather.columns:
+        city_today_weather.loc[:, 'temperature'] = city_today_weather['temperature'].apply(
+            clean_and_convert_temperature)
+    if 'realfeel' in city_today_weather.columns:
+        city_today_weather.loc[:, 'realfeel'] = city_today_weather['realfeel'].apply(clean_and_convert_temperature)
+    if 'wind' in city_today_weather.columns:
+        city_today_weather.loc[:, 'wind'] = city_today_weather['wind'].apply(clean_and_convert_temperature)
+    if 'gust' in city_today_weather.columns:
+        city_today_weather.loc[:, 'gust'] = city_today_weather['gust'].apply(clean_and_convert_temperature)
+    if 'humidity' in city_today_weather.columns:
+        city_today_weather.loc[:, 'humidity'] = city_today_weather['humidity'].apply(clean_and_convert_humidity)
+
+    # 保存清理和转换后的数据到对应的城市文件夹
+    daily_forecast_path = os.path.join(city_folder, 'daily_forecast.csv')
+    hourly_forecast_path = os.path.join(city_folder, 'hourly_forecast.csv')
+    today_weather_path = os.path.join(city_folder, 'today_weather.csv')
+
+    city_daily_forecast.to_csv(daily_forecast_path, index=False)
+    city_hourly_forecast.to_csv(hourly_forecast_path, index=False)
+    city_today_weather.to_csv(today_weather_path, index=False)
+
+    print(f"Data for city {city} has been saved and cleaned.")
+
+print("All data has been saved and cleaned.")

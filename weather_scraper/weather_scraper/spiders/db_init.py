@@ -1,27 +1,26 @@
-import os
 import sqlite3
+import csv
 
-# 获取当前脚本所在的目录
-base_dir = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(base_dir, 'weather_data.db')
 
-# 确保目录存在
-os.makedirs(os.path.dirname(db_path), exist_ok=True)
+def get_db_connection():
+    db_path = 'weather_data.db'
+    return sqlite3.connect(db_path)
 
-try:
-    # 连接到数据库
-    conn = sqlite3.connect(db_path)
+
+def create_tables():
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     # 创建city表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS city (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE
+            name TEXT,
+            url TEXT
         )
     ''')
 
-    # 创建今日天气表
+    # 创建today_weather表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS today_weather (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +34,7 @@ try:
         )
     ''')
 
-    # 创建小时预报表
+    # 创建hourly_forecast表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS hourly_forecast (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +46,7 @@ try:
         )
     ''')
 
-    # 创建每日预报表
+    # 创建daily_forecast表
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS daily_forecast (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +62,24 @@ try:
 
     conn.commit()
     conn.close()
-    print("数据库初始化成功")
 
-except sqlite3.OperationalError as e:
-    print(f"SQLite 操作错误: {e}")
+
+def import_cities_from_csv():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    with open('weather_scraper/weather_scraper/city.csv', newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            cursor.execute('''
+                INSERT INTO city (name, url) VALUES (?, ?)
+            ''', (row['city_name'], row['city_url']))
+
+    conn.commit()
+    conn.close()
+
+
+if __name__ == '__main__':
+    create_tables()
+    import_cities_from_csv()
+    print("Database initialized and cities imported.")

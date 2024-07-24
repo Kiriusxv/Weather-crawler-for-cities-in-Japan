@@ -3,35 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Data Visualization</title>
+    <title>Weather Search</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- 引入自定义字体 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <style>
-        .today-weather {
-            font-size: 1.5em;
-            margin-bottom: 20px;
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: url("{{ url_for('static', filename='爬虫壁纸.jpg') }}") no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+        }
+        .search-container {
+            margin-top: 50px;
+        }
+        .form-inline .form-control {
+            width: auto;
+            display: inline-block;
+        }
+        .city-list {
+            margin-top: 50px;
+        }
+        .list-group {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            padding: 10px 0;
+        }
+        .container {
+            background-color: rgba(0, 0, 0, 0.6); /* 半透明背景 */
+            padding: 20px;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Daily Weather Charts</h1>
-    <h2>Daily High and Low Temperatures</h2>
-    <img src="{{ url_for('static', filename='daily_temperature_chart.png') }}" alt="Daily Temperature Chart">
-    <h2>Daily Humidity</h2>
-    <img src="{{ url_for('static', filename='daily_humidity_chart.png') }}" alt="Daily Humidity Chart">
+    <div class="container">
+        <h1 class="my-4 text-center">Search Weather by City</h1>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="alert alert-warning" role="alert">
+            {{ messages[0] }}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="search-container text-center">
+            <form method="POST" action="/" class="form-inline justify-content-center">
+                <label for="city" class="mr-2">City:</label>
+                <input type="text" id="city" name="city" class="form-control mr-2" required>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
 
-    <h1>Hourly Weather Charts</h1>
-    <h2>Hourly Temperatures</h2>
-    <img src="{{ url_for('static', filename='hourly_temperature_chart.png') }}" alt="Hourly Temperature Chart">
-    <h2>Hourly Humidity</h2>
-    <img src="{{ url_for('static', filename='hourly_humidity_chart.png') }}" alt="Hourly Humidity Chart">
-
-    <h1>Today's Weather</h1>
-    <div class="today-weather">
-        <p>City: {{ today_weather['city'] }}</p>
-        <p>Temperature: {{ today_weather['temperature'] }}°C</p>
-        <p>Real Feel: {{ today_weather['realfeel'] }}°C</p>
-        <p>Wind: {{ today_weather['wind'] }} km/h</p>
-        <p>Gust: {{ today_weather['gust'] }} km/h</p>
-        <p>Air Quality: {{ today_weather['air_quality'] }}</p>
+        <div class="city-list">
+            <h2 class="text-center">City List</h2>
+            <ul class="list-group">
+                {% for city in cities %}
+                <li class="list-group-item text-center">
+                    <a href="{{ url_for('city_weather', city=city) }}">{{ city }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
+    <footer>
+        <p>Made By Kirius</p>
+        <p>2024.7version</p>
+    </footer>
+    <!-- 引入 Bootstrap JS 和依赖 -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

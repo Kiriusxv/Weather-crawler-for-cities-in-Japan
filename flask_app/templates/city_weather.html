@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ city }} Weather</title>
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- 引入自定义字体 -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: url("{{ url_for('static', filename='爬虫壁纸.jpg') }}") no-repeat center center fixed;
+            background-size: cover;
+            color: white;
+        }
+        .today-weather {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .chart {
+            margin-bottom: 30px;
+        }
+        .chart-row {
+            margin-bottom: 30px;
+        }
+        .detail-weather {
+            margin-top: 30px;
+            max-width: 900px; /* 限制表格的最大宽度 */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .table {
+            width: auto; /* 表格宽度自动 */
+        }
+        .container {
+            background-color: rgba(0, 0, 0, 0.6); /* 半透明背景 */
+            padding: 20px;
+            border-radius: 10px;
+        }
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            padding: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4 text-center">{{ city }} Weather</h1>
+        <div class="today-weather text-center mb-5">
+            {% if today_weather %}
+            <div class="card bg-dark text-white">
+                <div class="card-body">
+                    <h2 class="card-title">Today's Weather</h2>
+                    <p class="card-text">City: {{ today_weather['city'] }}</p>
+                    <p class="card-text">Temperature: {{ today_weather['temperature'] }}°C</p>
+                    <p class="card-text">Real Feel: {{ today_weather['realfeel'] }}°C</p>
+                    <p class="card-text">Wind: {{ today_weather['wind'] }} km/h</p>
+                    <p class="card-text">Gust: {{ today_weather['gust'] }} km/h</p>
+                    <p class="card-text">Air Quality: {{ today_weather['air_quality'] }}</p>
+                </div>
+            </div>
+            {% else %}
+            <p>No weather data available for today.</p>
+            {% endif %}
+        </div>
+
+        <div class="row chart-row">
+            <div class="col-md-6 chart">
+                <h2 class="text-center">Daily High and Low Temperatures</h2>
+                <img src="{{ url_for('static', filename=city + '/daily_temperature_chart.png') }}" alt="Daily Temperature Chart" class="img-fluid mx-auto d-block">
+            </div>
+            <div class="col-md-6 chart">
+                <h2 class="text-center">Daily Humidity</h2>
+                <img src="{{ url_for('static', filename=city + '/daily_humidity_chart.png') }}" alt="Daily Humidity Chart" class="img-fluid mx-auto d-block">
+            </div>
+        </div>
+
+        <div class="row chart-row">
+            <div class="col-md-6 chart">
+                <h2 class="text-center">Hourly Temperatures</h2>
+                <img src="{{ url_for('static', filename=city + '/hourly_temperature_chart.png') }}" alt="Hourly Temperature Chart" class="img-fluid mx-auto d-block">
+            </div>
+            <div class="col-md-6 chart">
+                <h2 class="text-center">Hourly Humidity</h2>
+                <img src="{{ url_for('static', filename=city + '/hourly_humidity_chart.png') }}" alt="Hourly Humidity Chart" class="img-fluid mx-auto d-block">
+            </div>
+        </div>
+
+        <div class="detail-weather">
+            <h2 class="text-center">Daily Weather Details</h2>
+            <table class="table table-bordered table-striped bg-dark text-white">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>City</th>
+                        <th>High Temp</th>
+                        <th>Low Temp</th>
+                        <th>Weather Details</th>
+                        <th>Humidity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for index, row in daily_data.iterrows() %}
+                    <tr>
+                        <td>{{ row['date'] }}</td>
+                        <td>{{ row['city'] }}</td>
+                        <td>{{ row['high_temp'] }}°C</td>
+                        <td>{{ row['low_temp'] }}°C</td>
+                        <td>{{ row['detail_weather'] }}</td>
+                        <td>{{ row['humidity'] }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <footer>
+        <p>Made By Kirius</p>
+        <p>2024.7version</p>
+    </footer>
+    <!-- 引入 Bootstrap JS 和依赖 -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
