@@ -19,6 +19,26 @@
             font-size: 1.5em;
             margin-bottom: 20px;
         }
+        .today-weather .card {
+            position: relative;
+            background: url("{{ url_for('static', filename='star.jpg') }}") no-repeat center center;
+            background-size: cover;
+            color: white;
+        }
+        .today-weather .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.01); /* 半透明背景 */
+            z-index: 1;
+        }
+        .today-weather .card-body {
+            position: relative;
+            z-index: 2;
+        }
         .chart {
             margin-bottom: 30px;
         }
@@ -33,6 +53,7 @@
         }
         .table {
             width: auto; /* 表格宽度自动 */
+            background-color: rgba(0, 0, 0, 0.3)!important; /* 半透明背景 */
         }
         .container {
             background-color: rgba(0, 0, 0, 0.6); /* 半透明背景 */
@@ -44,14 +65,21 @@
             text-align: center;
             padding: 10px 0;
         }
+        #clock {
+            font-size: 1.5em;
+            text-align: center;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="my-4 text-center">{{ city }} Weather</h1>
+        <div id="clock"></div>
+        <div class="text-center">Now is Japan time</div>
         <div class="today-weather text-center mb-5">
             {% if today_weather %}
-            <div class="card bg-dark text-white">
+            <div class="card">
                 <div class="card-body">
                     <h2 class="card-title">Today's Weather</h2>
                     <p class="card-text">City: {{ today_weather['city'] }}</p>
@@ -119,11 +147,27 @@
     </div>
     <footer>
         <p>Made By Kirius</p>
-        <p>2024.7version</p>
+        <p>2024.7 version</p>
     </footer>
     <!-- 引入 Bootstrap JS 和依赖 -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            // 日本标准时间（JST）比UTC早9小时
+            now.setHours(now.getUTCHours() + 9);
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var seconds = now.getSeconds();
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            var timeString = hours + ':' + minutes + ':' + seconds;
+            document.getElementById('clock').innerHTML = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
 </body>
 </html>

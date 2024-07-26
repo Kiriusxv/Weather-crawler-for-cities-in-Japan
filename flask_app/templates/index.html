@@ -39,11 +39,18 @@
             padding: 20px;
             border-radius: 10px;
         }
+        #clock {
+            font-size: 1.5em;
+            text-align: center;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="my-4 text-center">Search Weather by City</h1>
+        <div id="clock"></div>
+        <div class="text-center">Now is Japan time</div>
         {% with messages = get_flashed_messages() %}
         {% if messages %}
         <div class="alert alert-warning" role="alert">
@@ -72,11 +79,27 @@
     </div>
     <footer>
         <p>Made By Kirius</p>
-        <p>2024.7version</p>
+        <p>2024.7 version</p>
     </footer>
     <!-- 引入 Bootstrap JS 和依赖 -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            // 日本标准时间（JST）比UTC早9小时
+            now.setHours(now.getUTCHours() + 9);
+            var hours = now.getHours();
+            var minutes = now.getMinutes();
+            var seconds = now.getSeconds();
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            var timeString = hours + ':' + minutes + ':' + seconds;
+            document.getElementById('clock').innerHTML = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
 </body>
 </html>
